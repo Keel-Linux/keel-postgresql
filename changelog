@@ -1,0 +1,28 @@
+turnkey-postgresql-19.0 (1) turnkey; urgency=low
+
+  * Initial release of the PostgreSQL database layer for Keel, compatible
+    with TurnKey Linux appliances. Built as a layer on core:
+    bt-layer postgresql --parent core.
+
+  * PostgreSQL 17 from Debian 13 (Trixie), UTF-8 cluster, listening on the
+    loopback of both families, scram-sha-256 over TCP.
+
+  * webmin-postgresql, so the database is administered from the Webmin
+    panel core already carries, at https://[address]:12321.
+
+  * No password in the published layer. common's conf/pgsql gives the
+    postgres role the literal password 'postgres' when the build names
+    none; conf.d/main removes it, so the role cannot authenticate until
+    the first boot sets it from the instance description.
+
+  * The password comes from secrets.db_password of the instance
+    description, which renders to DB_PASS, which common's
+    firstboot.d/35pgsqlpass already reads. firstboot.d/36pgsqlverify then
+    connects as a client and says whether it arrived.
+
+  * Adminer, lighttpd and php-fpm, which the upstream postgresql appliance
+    bundles, are deliberately left out: they belong to the web stack that
+    LAPP builds on this layer. So is accepting password authentication
+    from anywhere, which that appliance's conf.d/main enables.
+
+ -- Keel Linux maintainers <admin@keellinux.org>  Sat, 27 Sep 2026 12:00:00 +0000
