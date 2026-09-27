@@ -1,3 +1,13 @@
+turnkey-postgresql-19.0 (2) turnkey; urgency=low
+
+  * Listen on both loopback addresses, named literally:
+    listen_addresses = '::1,127.0.0.1'. Debian's default, 'localhost',
+    binds the IPv4 loopback alone, because Debian's /etc/hosts maps ::1 to
+    ip6-localhost and never to localhost, so an appliance built on this
+    layer and reaching its database over IPv6 found nothing listening.
+
+ -- Keel Linux maintainers <admin@keellinux.org>  Sun, 27 Sep 2026 07:30:00 +0000
+
 turnkey-postgresql-19.0 (1) turnkey; urgency=low
 
   * Initial release of the PostgreSQL database layer for Keel, compatible
