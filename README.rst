@@ -7,7 +7,18 @@ appliance `turnkeylinux-apps/postgresql
 <https://github.com/turnkeylinux-apps/postgresql>`_ for the database half
 of what that appliance is::
 
+    git clone --branch v1.0.0 \
+        https://github.com/keel-linux/unit-postgresql.git unit.d/postgresql
     bt-layer postgresql --parent core
+
+The server comes from the ``unit.d/postgresql`` component, not from the
+shared tree: `keel-linux/unit-postgresql
+<https://github.com/keel-linux/unit-postgresql>`_ carries its plan, its
+overlay, its conf script and the ``PGSQL_PASS`` it reads, fab applies it, and
+``bt-layer`` records it in the layer manifest as ``units postgresql@1.0.0``.
+Materialising ``unit.d`` from the pin is the assembly step decision 0010 names
+as work of the project and does not exist yet, so the clone above is that step
+for now; ``unit.d/`` is ignored by git here.
 
 It is a layer, not a product: LAPP and any other appliance that needs
 PostgreSQL is built on it, so the cluster is created, secured and measured
@@ -18,18 +29,21 @@ What is in it
 -------------
 
 ======================================  ====================================
-``Makefile``                            ``mk/turnkey/pgsql.mk`` of ``common``, this overlay, the firewall ports
-``plan/main``                           postgresql, webmin-postgresql, the client, the project packages
+``Makefile``                            the component under ``unit.d``, this overlay, the firewall ports
+``plan/main``                           the client and the project packages; the server and webmin-postgresql are the component's plan
 ``conf.d/main``                         the build time password removed; the checks; the project package upgrade
 ``overlay/usr/lib/inithooks/``          the verification hook and its library
 ``keel/instance.example.yaml``          the instance description an operator starts from
 ``tests/``                              bats for the shell, ``boot-test.sh`` for the machine
 ======================================  ====================================
 
-``mk/turnkey/pgsql.mk`` brings ``conf/pgsql`` (the UTF-8 cluster, password
-encryption, the root superuser) and the ``pgsql`` overlay, which carries
-``bin/pgsqlconf.py`` and ``firstboot.d/35pgsqlpass``. Those are used as
-they are, not rewritten.
+The component brings the UTF-8 cluster, password encryption, the bind
+addresses, the root superuser, ``bin/pgsqlconf.py`` and
+``firstboot.d/35pgsqlpass``. Those are used as they are, not rewritten. The
+bind addresses used to be set here, in ``conf.d/main``; they moved into the
+component because binding is what whoever installs the server decides and LAPP
+will carry the component without carrying this recipe. What stayed here is the
+check that the line is in the built image.
 
 Webmin comes from ``core`` and answers on 12321; this layer adds
 ``webmin-postgresql``, the module that puts the database in it. Batteries
