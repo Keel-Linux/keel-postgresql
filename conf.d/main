@@ -113,9 +113,15 @@ keel 0.2.1
 EOF
 dpkg-query -W -f '${Package} ${Version} ${Status}\n' inithooks confconsole keel
 
-# The build time package source is not for appliances: remove it, keep the
-# documented, disabled entry for the future signed repository (overlay).
+# The build time package source is not for appliances: remove the source
+# entry, the copy of the archive it names and the keyring the build verified
+# that archive with, and keep the documented, disabled entry for the future
+# signed repository (overlay). The staging key signs whatever the build host
+# produced, so an image that kept it would carry trust in a nightly
+# (tracker#7). common/removelists-final/turnkey removes the same three paths
+# at the end of the build, whatever a recipe does.
 rm -f /etc/apt/sources.list.d/keel-staging.list
+rm -f /etc/apt/keyrings/keel-staging-keyring.asc
 rm -rf /srv/keel-apt
 rm -rf /var/lib/apt/lists/*
 grep -q '^Enabled: no' /etc/apt/sources.list.d/keel.sources
