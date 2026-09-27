@@ -1,12 +1,13 @@
 #!/bin/bash -ex
 # PostgreSQL, and nothing that serves a web page.
 #
-# common's conf/pgsql has already run (COMMON_CONF of mk/turnkey/pgsql.mk):
-# it recreated the cluster as UTF-8, turned on password encryption, reduced
-# shared_buffers, gave root a superuser role, and set the postgres role's
-# password. That last step is the one thing this layer has to undo.
+# The conf script of the unit.d/postgresql component has already run (fab runs
+# the units after the common conf scripts and before this one): it recreated
+# the cluster as UTF-8, turned on password encryption, reduced shared_buffers,
+# set the bind addresses, gave root a superuser role, and set the postgres
+# role's password. That last step is the one thing this layer has to undo.
 #
-# conf/pgsql opens with
+# The component's conf script opens with
 #
 #     set ${PGSQL_PASS:=postgres}
 #
@@ -41,25 +42,16 @@ EOF
 
 systemctl stop postgresql
 
-# The cluster listens on the loopback of both families and nowhere else,
-# and both are named as literal addresses.
-#
-# Debian's default is listen_addresses = 'localhost', and that was taken
-# for "the loopback of both families" when this layer was written. It is
-# not. Debian's /etc/hosts maps ::1 to ip6-localhost and ip6-loopback and
-# never to localhost, so getaddrinfo("localhost") answers 127.0.0.1 alone
-# and the cluster binds the IPv4 loopback only. Measured on the booted
-# layer: "LISTEN 127.0.0.1:5432" and nothing on [::1]:5432, with ::1 up on
-# lo and pg_hba.conf already holding its scram-sha-256 line for ::1/128.
-# An appliance built on this layer and reaching its database over IPv6,
-# which is the default this project builds for (brief section 10), found
-# nothing listening.
-#
-# Two literal addresses cannot resolve into something else, which is the
-# whole point of writing them out; what they bind to is then proved on the
-# booted machine by the boot test rather than assumed here.
-sed -i "s|^#\?listen_addresses = .*|listen_addresses = '::1,127.0.0.1'\t\t# set by conf.d/main of keel-postgresql: see the comment there|" \
-    "$CONF_DIR/postgresql.conf"
+# The cluster listens on the loopback of both families and nowhere else, and
+# both are named as literal addresses. The component wrote that line, because
+# binding is what whoever installs the server decides and LAPP will carry the
+# component without carrying this recipe. This is the check on what it wrote:
+# Debian's default, listen_addresses = 'localhost', binds the IPv4 loopback
+# only, since /etc/hosts maps ::1 to ip6-localhost and ip6-loopback and never
+# to localhost, and an appliance reaching its database over IPv6, which is the
+# default this project builds for (brief section 10), then finds nothing
+# listening. What the two addresses bind to is proved on the booted machine by
+# the boot test; this fails the build if the line is not there at all.
 grep -qE "^listen_addresses = '::1,127\.0\.0\.1'" "$CONF_DIR/postgresql.conf"
 
 # Upstream's postgresql appliance replaces listen_addresses with '*' and

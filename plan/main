@@ -1,13 +1,11 @@
 #include <turnkey/base>
 
-/* There is no plans/turnkey/pgsql in common, so the packages are named
-   here. mk/turnkey/pgsql.mk brings the conf script and the overlay that
-   carries bin/pgsqlconf.py and firstboot.d/35pgsqlpass. */
-postgresql
-
-/* webmin-postgresql (2.660.turnkey0) is the module that puts the database
-   in the panel core already carries */
-webmin-postgresql
+/* The server and webmin-postgresql (2.660.turnkey0), the module that puts
+   the database in the panel core already carries, are the plan of the
+   unit.d/postgresql component, together with the overlay that carries
+   bin/pgsqlconf.py and firstboot.d/35pgsqlpass and the conf script that
+   creates the cluster. fab resolves every unit's plan with this one, so they
+   are not named here. */
 
 /* the command line client: the appliance talks to its own database over
    loopback, and firstboot.d/36pgsqlverify proves the declared password */
