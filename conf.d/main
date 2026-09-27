@@ -1,0 +1,103 @@
+#!/bin/bash -ex
+# PostgreSQL, and nothing that serves a web page.
+#
+# common's conf/pgsql has already run (COMMON_CONF of mk/turnkey/pgsql.mk):
+# it recreated the cluster as UTF-8, turned on password encryption, reduced
+# shared_buffers, gave root a superuser role, and set the postgres role's
+# password. That last step is the one thing this layer has to undo.
+#
+# conf/pgsql opens with
+#
+#     set ${PGSQL_PASS:=postgres}
+#
+# so a build that names no PGSQL_PASS gives the superuser of the database
+# the password 'postgres'. For an appliance that is a bad default; for a
+# published layer it is worse, because the layer is fetched by name and
+# reused, so every appliance built on it would ship the same known
+# superuser password, and one whose first boot hook failed would keep it.
+#
+# Removing the password rather than choosing another one is deliberate. A
+# build time value would be the same on every appliance built from this
+# layer, and a random one would make the layer irreproducible (brief
+# section 5.4: same commit plus same manifest, same bytes). With no
+# password the role authenticates nothing over TCP until
+# firstboot.d/35pgsqlpass sets it from DB_PASS, so the failure mode is a
+# database nobody can reach rather than a database everybody can.
+
+PGSQL_VER=$(ls /etc/postgresql/)
+CONF_DIR=/etc/postgresql/$PGSQL_VER/main
+
+systemctl start postgresql
+
+su postgres -c "psql --quiet postgres" <<'EOF'
+ALTER ROLE postgres PASSWORD NULL;
+EOF
+
+# rolpassword is null for the role, which is what "cannot authenticate with
+# a password" looks like in the catalogue.
+su postgres -c "psql --quiet --tuples-only --no-align postgres" <<'EOF' | grep -qx t
+SELECT rolpassword IS NULL FROM pg_authid WHERE rolname = 'postgres';
+EOF
+
+systemctl stop postgresql
+
+# The cluster listens on the loopback of both families and nowhere else.
+# Debian's default, listen_addresses = 'localhost', is exactly that, so it
+# is asserted rather than changed: upstream's postgresql appliance replaces
+# it with '*' and appends a pg_hba line accepting password authentication
+# from 0.0.0.0/0, and this layer must not inherit that by accident.
+grep -qE "^#?listen_addresses = 'localhost'" "$CONF_DIR/postgresql.conf"
+! grep -qE "^listen_addresses = '\*'" "$CONF_DIR/postgresql.conf"
+! grep -qE '^host\s+all\s+all\s+0\.0\.0\.0/0' "$CONF_DIR/pg_hba.conf"
+
+# A TCP connection on the IPv6 loopback is authenticated by password, which
+# is what firstboot.d/36pgsqlverify proves on the booted machine.
+grep -qE '^host\s+all\s+all\s+::1/128\s+scram-sha-256' "$CONF_DIR/pg_hba.conf"
+
+# webmin-postgresql is what puts the database in the panel core already
+# carries; the plan asks for it, so fail the build rather than ship a panel
+# without its database module (the boot test checks the running appliance).
+dpkg-query -W -f '${Status}' webmin-postgresql | grep -qx 'install ok installed'
+
+# fab-plan-resolve keeps a package the parent layer already carries at the
+# parent's version, so the two core packages are upgraded here from the
+# build time source (keel, new in the plan, was installed from it already).
+#
+# The overlay of this layer ships /etc/confconsole/services.txt, which is a
+# conffile of confconsole, so dpkg sees it as locally modified and asks what
+# to do with it. The conf script runs with stdin closed, dpkg reads end of
+# file at the prompt and leaves confconsole "install ok unpacked", which
+# fails this script. Keep the overlay's file without asking.
+export DEBIAN_FRONTEND=noninteractive
+apt-get install -y --only-upgrade \
+    -o Dpkg::Options::=--force-confdef \
+    -o Dpkg::Options::=--force-confold \
+    inithooks confconsole
+
+# A half configured package keeps its new version, so check the state too.
+[[ $(dpkg-query -W -f '${Status}\n' inithooks confconsole keel \
+    | grep -c '^install ok installed$') -eq 3 ]]
+
+# A floor, not a literal: the declarative first boot this layer depends on
+# landed in these versions, and a build that read a stale index would ship
+# a layer whose whole point does not work. keel-nodebb's
+# conf.d/zz-project-packages is where the archive freshness check itself is
+# maintained; this is the minimum, which is what publishing this layer
+# requires.
+while read -r package floor; do
+    installed=$(dpkg-query -W -f '${Version}' "$package")
+    dpkg --compare-versions "$installed" ge "$floor" \
+        || { echo "$package $installed is older than $floor" >&2; exit 1; }
+done <<EOF
+inithooks 2.3.6+keel4
+confconsole 2.2.3+keel2
+keel 0.2.1
+EOF
+dpkg-query -W -f '${Package} ${Version} ${Status}\n' inithooks confconsole keel
+
+# The build time package source is not for appliances: remove it, keep the
+# documented, disabled entry for the future signed repository (overlay).
+rm -f /etc/apt/sources.list.d/keel-staging.list
+rm -rf /srv/keel-apt
+rm -rf /var/lib/apt/lists/*
+grep -q '^Enabled: no' /etc/apt/sources.list.d/keel.sources

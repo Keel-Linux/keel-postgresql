@@ -1,0 +1,19 @@
+#include <turnkey/base>
+
+/* There is no plans/turnkey/pgsql in common, so the packages are named
+   here. mk/turnkey/pgsql.mk brings the conf script and the overlay that
+   carries bin/pgsqlconf.py and firstboot.d/35pgsqlpass. */
+postgresql
+
+/* webmin-postgresql (2.660.turnkey0) is the module that puts the database
+   in the panel core already carries */
+webmin-postgresql
+
+/* the command line client: the appliance talks to its own database over
+   loopback, and firstboot.d/36pgsqlverify proves the declared password */
+postgresql-client
+
+/* project packages, resolved from the build host's staging repository */
+inithooks
+confconsole
+keel
