@@ -54,10 +54,14 @@ Upstream's ``conf.d/main`` sets ``listen_addresses = '*'`` and appends
 ``host all all 0.0.0.0/0 md5`` to ``pg_hba.conf``, so the appliance accepts
 password authentication for every database from anywhere. On an IPv6 first,
 publicly routable appliance (brief section 5.3) that is not a default this
-project can inherit quietly. This layer keeps Debian's
-``listen_addresses = 'localhost'``, which is the loopback of both families,
-and asserts at build time that neither of upstream's two changes is
-present. An appliance that really has remote clients opens the port, says
+project can inherit quietly. This layer listens on
+``'::1,127.0.0.1'``, the loopback of both families and nothing else, and
+asserts at build time that neither of upstream's two changes is present.
+Both addresses are written out rather than left to Debian's default of
+``'localhost'``: that default binds the IPv4 loopback alone, because
+Debian's ``/etc/hosts`` maps ``::1`` to ``ip6-localhost`` and never to
+``localhost``, which is a defect this layer shipped once and its own boot
+test caught. An appliance that really has remote clients opens the port, says
 who may connect and terminates TLS. That is a decision an appliance makes,
 not one a database layer makes for everything built on it.
 
