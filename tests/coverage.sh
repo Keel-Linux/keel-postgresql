@@ -3,8 +3,8 @@
 # bats suite (decision 0004). The measured files are the first boot library
 # (lib/postgresql.sh), the first boot hook this layer adds
 # (firstboot.d/36pgsqlverify) and the logic of the boot test
-# (tests/lib/boot-test-lib.sh) and the build time archive check the recipe
-# runs (bin/keel-archive-check); the 95 percent bar of decision 0003 applies
+# (tests/lib/boot-test-lib.sh) and the check of the project packages the
+# recipe runs (bin/keel-project-packages); the 95 percent bar of decision 0003 applies
 # to all four and all four are at 100. Exits 1 below the threshold, 2 when
 # a tool is missing. tests/boot-test.sh is the thin main that runs keel and
 # LXC as root and is exercised by the container run in test-appliance.yml,
@@ -28,7 +28,7 @@ done
 report="${COVERAGE_DIR:-$(mktemp -d)}"
 # The include pattern is the whitelist, so no exclude pattern is needed; an
 # exclude of /tests/ would drop tests/lib/boot-test-lib.sh with it.
-kcov --include-pattern=/lib/postgresql.sh,/firstboot.d/36pgsqlverify,/tests/lib/boot-test-lib.sh,/bin/keel-archive-check \
+kcov --include-pattern=/lib/postgresql.sh,/firstboot.d/36pgsqlverify,/tests/lib/boot-test-lib.sh,/bin/keel-project-packages \
     "$report" bats "$here"
 
 json="$(find "$report" -mindepth 2 -maxdepth 2 -name coverage.json -not -path "*/kcov-merged/*" | head -1)"
