@@ -1,3 +1,10 @@
+turnkey-postgresql-19.0 (6) turnkey; urgency=low
+
+  * Release of 2026-10-09 (step 12): rebuilt on the lean Core 19.0-10
+    (handbook decision 0052) with keel 0.23.13.
+
+ -- KeelLinux maintainers <admin@keellinux.org>  Fri, 09 Oct 2026 22:45:00 +0000
+
 turnkey-postgresql-19.0 (5) turnkey; urgency=low
 
   * The project's packages (inithooks, confconsole, keel) come from the
