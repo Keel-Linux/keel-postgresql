@@ -124,6 +124,16 @@ log "first boot finished; ssh root@$addr"
 log "the database lines of the container's inithooks log:"
 grep -E '35pgsqlpass|36pgsqlverify|PostgreSQL' "$BT_ROOTFS/var/log/inithooks.log" || true
 
+# 6b. Both database hooks completed, and every PostgreSQL cluster is active
+#     after the first boot. On the step 12 image of 2026-10-09 the cluster
+#     started before its certificate existed and stopped, the hooks failed
+#     on it, and 36pgsqlverify started it again: so the hooks are checked
+#     as well as the cluster.
+bt_db_hooks_verdict "$(cat "$BT_ROOTFS/var/log/inithooks.log")"
+clusters=$(lxc attach -- systemctl list-units --all --plain --no-legend \
+    'postgresql@*.service' 2>/dev/null || true)
+bt_cluster_verdict "$clusters"
+
 # 7. The declarative path, end to end: a client connection to the database
 #    with the password the description declared. The client runs inside the
 #    container over TCP on [::1], because the cluster listens on the

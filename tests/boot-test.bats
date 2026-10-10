@@ -429,3 +429,60 @@ DEF
     [ "$status" -eq 1 ]
     [[ $output == *"failed with exit 127"* ]]
 }
+
+# What 'systemctl list-units --all --plain --no-legend postgresql@*.service'
+# prints on the booted machine: UNIT LOAD ACTIVE SUB DESCRIPTION.
+@test "cluster_verdict: every cluster active and running passes" {
+    run bt_cluster_verdict "postgresql@17-main.service loaded active running PostgreSQL Cluster 17-main"
+    [ "$status" -eq 0 ]
+    [[ $output == *"postgresql@17-main.service is active (running)"* ]]
+}
+
+@test "cluster_verdict: a cluster that failed at boot fails the test" {
+    # the step 12 image of 2026-10-09: the cluster started before the
+    # snakeoil certificate existed and stopped
+    run bt_cluster_verdict "postgresql@17-main.service loaded failed failed PostgreSQL Cluster 17-main"
+    [ "$status" -eq 1 ]
+    [[ $output == *"postgresql@17-main.service is failed (failed), not active (running)"* ]]
+}
+
+@test "cluster_verdict: one cluster down among several fails the test" {
+    run bt_cluster_verdict "$(printf '%s\n' \
+        "postgresql@17-main.service loaded active running PostgreSQL Cluster 17-main" \
+        "postgresql@17-other.service loaded inactive dead PostgreSQL Cluster 17-other")"
+    [ "$status" -eq 1 ]
+    [[ $output == *"postgresql@17-other.service is inactive (dead)"* ]]
+}
+
+@test "cluster_verdict: no cluster at all fails the test" {
+    run bt_cluster_verdict ""
+    [ "$status" -eq 1 ]
+    [[ $output == *"no PostgreSQL cluster unit"* ]]
+}
+
+# The database lines of /var/log/inithooks.log after the first boot.
+@test "db_hooks_verdict: both database hooks completed passes" {
+    run bt_db_hooks_verdict "$(printf '%s\n' \
+        "INFO: [35pgsqlpass] running" "INFO: [35pgsqlpass] successfully completed" \
+        "INFO: [36pgsqlverify] running" "INFO: [36pgsqlverify] successfully completed")"
+    [ "$status" -eq 0 ]
+    [[ $output == *"35pgsqlpass completed"* ]]
+    [[ $output == *"36pgsqlverify completed"* ]]
+}
+
+@test "db_hooks_verdict: a failed hook fails the test even when the cluster runs later" {
+    # the step 12 image: the hooks failed on a stopped cluster, and
+    # 36pgsqlverify started the cluster afterwards, so it was active at the end
+    run bt_db_hooks_verdict "$(printf '%s\n' \
+        "INFO: [35pgsqlpass] running" "ERR: [35pgsqlpass] failed - exit code 1" \
+        "INFO: [36pgsqlverify] running" "ERR: [36pgsqlverify] failed - exit code 1")"
+    [ "$status" -eq 1 ]
+    [[ $output == *"35pgsqlpass did not complete"* ]]
+    [[ $output == *"36pgsqlverify did not complete"* ]]
+}
+
+@test "db_hooks_verdict: a hook that never ran fails the test" {
+    run bt_db_hooks_verdict "INFO: [35pgsqlpass] successfully completed"
+    [ "$status" -eq 1 ]
+    [[ $output == *"36pgsqlverify did not complete"* ]]
+}
