@@ -11,13 +11,13 @@ LXC as the acceptance test of a recipe, docs/org-plan.md section 1).
 | overlay/usr/lib/inithooks/lib/postgresql.sh | tests/postgresql.bats (11 tests) | 100 percent (41/41) under kcov | every function and every branch |
 | overlay/usr/lib/inithooks/firstboot.d/36pgsqlverify | tests/hook.bats (10 tests) | 100 percent (15/15) under kcov | every path, including the two failures that matter |
 | tests/lib/boot-test-lib.sh | tests/boot-test.bats (44 tests) | 100 percent (154/154) under kcov | argument parsing, address discovery, deadlines, the container marks, the database, module, Webmin and diff verdicts |
-| bin/keel-archive-check | tests/archive-check.bats (27 tests) | 100 percent (54/54) under kcov | the build time check: the archive copy in the build tree is the live archive, the source entry names the keyring through signed-by, nothing says trusted=yes, and the signature on the copied InRelease verifies against the staging key (tracker#7) |
+| bin/keel-project-packages | tests/project-packages.bats (6 tests) | 100 percent (32/32) under kcov | inithooks, confconsole and keel are installed at apt's candidate, and the candidate is the Keel archive's in the suite of the track (KEEL_APT_TRACK); a version below the candidate, another source or an unknown track fails |
 | conf.d/main | the build | integration only | build time script, 0004 pragmatic limits |
 | tests/boot-test.sh | itself | integration only | the thin main of the acceptance test: keel and LXC as root |
 | overlay ... firstboot.d/35pgsqlpass | common | not this repository | the hook that sets the password belongs to the `common` fork and is used, not rewritten |
 
 Total over the four measured shell files: **100 percent (264/264)**,
-92 bats tests. `tests/coverage.sh` fails below `COVERAGE_THRESHOLD`, which
+77 bats tests. `tests/coverage.sh` fails below `COVERAGE_THRESHOLD`, which
 the workflow sets to 100, the measured number. It is only ever raised
 (decision 0006).
 
@@ -26,7 +26,7 @@ the workflow sets to 100, the measured number. It is only ever raised
      100.00  41/41  postgresql.sh
      100.00  15/15  36pgsqlverify
      100.00  154/154  boot-test-lib.sh
-     100.00  54/54  keel-archive-check
+     100.00  32/32  keel-project-packages
 
 ## What the hook tests cover
 

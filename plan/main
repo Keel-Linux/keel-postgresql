@@ -13,7 +13,7 @@ webmin-postgresql
    loopback, and firstboot.d/36pgsqlverify proves the declared password */
 postgresql-client
 
-/* project packages, resolved from the build host's staging repository */
+/* project packages, from the Keel archive (archive.keellinux.org) */
 inithooks
 confconsole
 keel
