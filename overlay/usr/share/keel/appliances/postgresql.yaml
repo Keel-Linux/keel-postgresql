@@ -1,0 +1,26 @@
+manifest_version: 1
+kind: appliance
+name: postgresql
+title: Keel PostgreSQL
+summary: The PostgreSQL database layer on Keel Core, alone or as a replicated pair (0047, 0049)
+base: core
+# The overlays are Core's, inherited with their states (installer, wireguard,
+# etcd, crowdsec, vip): this layer adds none, and a spec that names it writes
+# all five out (0027).
+processes:
+  - name: postgresql
+    unit: postgresql.service
+    # ::1 and 127.0.0.1 as the component ships it (conf/pgsql); on a pair,
+    # database.server.listen adds the node's overlay address and the VIP,
+    # so 5432 is a mesh port: on the WireGuard interface, never on the
+    # uplink.
+    listen: [{port: 5432, protocol: tcp, expose: mesh}]
+checks:
+  - {name: postgresql, process: postgresql, type: protocol, protocol: pgsql,
+     address: loopback, port: 5432, on_failure: restart}
+secrets:
+  - name: db_password
+    description: The PostgreSQL role the first boot sets, from DB_PASS
+    generate: allowed
+    # the database replicates with the rest: a pair holds one value
+    shared: true
