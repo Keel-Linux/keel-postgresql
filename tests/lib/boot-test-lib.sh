@@ -378,6 +378,48 @@ bt_module_verdict() {
     return 1
 }
 
+bt_cluster_verdict() {
+    # bt_cluster_verdict UNITS: what 'systemctl list-units --all --plain
+    # --no-legend postgresql@*.service' printed on the booted machine, one
+    # unit per line (UNIT LOAD ACTIVE SUB DESCRIPTION). After the first
+    # boot every cluster must be active and running. The step 12 image of
+    # 2026-10-09 started postgresql@17-main before the snakeoil certificate
+    # existed; the cluster stopped and 35pgsqlpass and 36pgsqlverify failed.
+    local unit load active sub rest count=0 bad=0
+    while read -r unit load active sub rest; do
+        [ -n "$unit" ] || continue
+        count=$((count + 1))
+        if [ "$active" = active ] && [ "$sub" = running ]; then
+            echo "boot-test: $unit is active (running)"
+        else
+            echo "boot-test: $unit is $active ($sub), not active (running)" >&2
+            bad=1
+        fi
+    done <<< "${1-}"
+    if [ "$count" -eq 0 ]; then
+        echo "boot-test: no PostgreSQL cluster unit on the booted machine" >&2
+        return 1
+    fi
+    return "$bad"
+}
+
+bt_db_hooks_verdict() {
+    # bt_db_hooks_verdict LOG: the lines of /var/log/inithooks.log after the
+    # first boot. Both database hooks must have completed. The cluster being
+    # active at the end is not enough: on the step 12 image the hooks failed
+    # on a stopped cluster, and 36pgsqlverify then started it.
+    local hook bad=0
+    for hook in 35pgsqlpass 36pgsqlverify; do
+        if grep -qxF "INFO: [$hook] successfully completed" <<< "${1-}"; then
+            echo "boot-test: $hook completed"
+        else
+            echo "boot-test: $hook did not complete in the first boot" >&2
+            bad=1
+        fi
+    done
+    return "$bad"
+}
+
 bt_db_verdict() {
     # bt_db_verdict OUTPUT: what the database client printed when it
     # connected with the declared password and ran the probe query. The
