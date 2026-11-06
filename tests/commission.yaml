@@ -81,33 +81,53 @@ screenshots:
   - {name: webmin-postgresql, port: 12321, url: /postgresql/, wait: 8}
 # The cloud modes (decision 0076): PostgreSQL is a replicating engine, the
 # pair of decisions 0054 and 0057. The prompts are the titles of the
-# confconsole screens. This part is declared for the cloud passes; the
-# single node passes do not read it.
+# confconsole screens, the shape of the reference contract of .github
+# (tests/fixtures/commission/wordpress.yaml). This part is declared for the
+# cloud passes; the single node passes do not read it. A database layer
+# has no site files, so there is no Syncthing check.
 cloud:
   capture:
+    # keel1: an invite without a VIP, keel2: one that carries it (keel 0.23.83)
     invite: 'keel[12]:[A-Za-z0-9_.~+/=-]+'
+    # the label anchors it: the usage screen shows the node's own addresses too
     vip: 'VIP:? +([0-9a-f]{1,4}(:[0-9a-f]{0,4}){2,7})'
+  # the screens on which a node waits for another: no key while they are up
+  waits: [Waiting for the nodes]
+  # the proofs across the pair, in order: one VIP holder, a row written on
+  # the primary and read on the standby, the server on the VIP seen from the
+  # standby, and a promote and its return
   checks:
-    - {id: vip-holder, at: all, run: 'keel vip status', match: 'holder', count: 1}
-    - {id: row-through-vip, at: replica, secret: db, run: 'PGPASSWORD="$SECRET" psql -h "$VIP" -U postgres -d postgres -Atc "SELECT 1"'}
+    - {id: vip-holder, at: all, run: 'keel vip status', match: 'carried here: yes', count: 1}
+    - {id: row-written, at: primary, run: 'runuser -u postgres -- psql -v ON_ERROR_STOP=1 -d postgres -qc "CREATE TABLE IF NOT EXISTS kc_probe (v int); INSERT INTO kc_probe VALUES (42)"'}
+    - {id: row-replicated, at: replica, run: 'sleep 5; runuser -u postgres -- psql -d postgres -Atc "SELECT v FROM kc_probe"', match: '^42$'}
+    - {id: replica-in-recovery, at: replica, run: 'runuser -u postgres -- psql -d postgres -Atc "SELECT pg_is_in_recovery()"', match: '^t$'}
+    # the server answers on the VIP across the mesh. pg_hba.conf lets the
+    # peer in for replication only (decision 0054), so this asks no login
+    # (BR1 and BR2, 2026-11-06: a login of postgres there is refused)
+    - {id: server-on-vip, at: replica, run: 'test -n "$VIP" && pg_isready -h "$VIP" -p 5432', match: 'accepting connections'}
     - {id: promote, at: replica, run: 'keel vip promote'}
-    - {id: promoted-holder, at: replica, run: 'keel vip status', match: 'holder'}
+    - {id: promoted-holder, at: replica, run: 'keel vip status', match: 'carried here: yes'}
+    - {id: promoted-writable, at: replica, run: 'for i in $(seq 30); do r=$(runuser -u postgres -- psql -d postgres -Atc "SELECT pg_is_in_recovery()"); [ "$r" = f ] && break; sleep 2; done; echo $r', match: '^f$'}
     - {id: return, at: primary, run: 'keel vip promote'}
-    - {id: returned-holder, at: primary, run: 'keel vip status', match: 'holder'}
+    - {id: returned-holder, at: primary, run: 'keel vip status', match: 'carried here: yes'}
+    - {id: probe-dropped, at: primary, run: 'for i in $(seq 30); do runuser -u postgres -- psql -v ON_ERROR_STOP=1 -d postgres -qc "DROP TABLE kc_probe" 2>/dev/null && exit 0; sleep 2; done; exit 1'}
 nodes:
   - name: primary
     site: br1
     mode: cloud_simple
     role: primary
+    # the hotkeys of the menus (the first letter of an item): an arrow key is
+    # an escape sequence, and the console of a container can hand dialog its
+    # ESC alone, which cancels the screen (BR1, 2026-11-06)
     answers:
-      - {id: mode, prompt: Installation mode, keys: '{down}{ret}'}
-      - {id: role, prompt: Role of this node, keys: '{ret}'}
+      - {id: mode, prompt: Installation mode, keys: 'C{ret}'}
+      - {id: role, prompt: Role of this node, keys: 'P{ret}'}
       - {id: invite, prompt: Invite a node, keys: '{ret}'}
   - name: replica
     site: br2
     mode: cloud_simple
     role: replica
     answers:
-      - {id: mode, prompt: Installation mode, keys: '{down}{ret}'}
-      - {id: role, prompt: Role of this node, keys: '{down}{ret}'}
+      - {id: mode, prompt: Installation mode, keys: 'C{ret}'}
+      - {id: role, prompt: Role of this node, keys: 'R{ret}'}
       - {id: join, prompt: Join a mesh, keys: '{invite:1}{ret}'}
