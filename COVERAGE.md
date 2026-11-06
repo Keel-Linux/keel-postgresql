@@ -4,35 +4,37 @@ Standard: decisions 0003 (90 percent per repository, 95 for code the
 project writes) and 0004 (bats plus kcov for shell; a build and a boot on
 LXC as the acceptance test of a recipe, docs/org-plan.md section 1).
 
-## Measured 2026-09-27
+## Measured 2026-11-06
 
 | File | Test | Lines | Note |
 | --- | --- | --- | --- |
-| overlay/usr/lib/inithooks/lib/postgresql.sh | tests/postgresql.bats (11 tests) | 100 percent (41/41) under kcov | every function and every branch |
-| overlay/usr/lib/inithooks/firstboot.d/36pgsqlverify | tests/hook.bats (10 tests) | 100 percent (15/15) under kcov | every path, including the two failures that matter |
+| overlay/usr/lib/inithooks/lib/postgresql.sh | tests/postgresql.bats (13 tests) | 100 percent (45/45) under kcov | every function and every branch |
+| overlay/usr/lib/inithooks/firstboot.d/36pgsqlverify | tests/hook.bats (15 tests) | 100 percent (25/25) under kcov | every path: a declared password, a headless boot that defers, a console that set it (the catalogue), and the failures |
 | tests/lib/boot-test-lib.sh | tests/boot-test.bats (51 tests) | 100 percent (173/173) under kcov | argument parsing, address discovery, deadlines, the container marks, the database hooks, cluster, database, module, Webmin and diff verdicts |
 | bin/keel-project-packages | tests/project-packages.bats (6 tests) | 100 percent (32/32) under kcov | inithooks, confconsole and keel are installed at apt's candidate, and the candidate is the Keel archive's in the suite of the track (KEEL_APT_TRACK); a version below the candidate, another source or an unknown track fails |
+| keel/instance.example.yaml, tests/instance.yaml, tests/commission.yaml | tests/manifest.bats | keel's own validator | with KEEL_SRC and KEEL_MANIFEST_SOURCES: the specs hold against the manifest along core, with no warning |
+| overlay/etc/confconsole/services.txt | tests/services.bats | every line | no web shell, which the image does not have |
 | conf.d/main | the build | integration only | build time script, 0004 pragmatic limits |
 | tests/boot-test.sh | itself | integration only | the thin main of the acceptance test: keel and LXC as root |
 | overlay ... firstboot.d/35pgsqlpass | common | not this repository | the hook that sets the password belongs to the `common` fork and is used, not rewritten |
 
-Total over the four measured shell files: **100 percent (264/264)**,
-77 bats tests. `tests/coverage.sh` fails below `COVERAGE_THRESHOLD`, which
-the workflow sets to 100, the measured number. It is only ever raised
-(decision 0006).
+Total over the four measured shell files: **100 percent (275/275)**.
+`tests/coverage.sh` fails below `COVERAGE_THRESHOLD`, which the workflow
+sets to 100, the measured number. It is only ever raised (decision 0006).
 
     $ COVERAGE_THRESHOLD=100 tests/coverage.sh
     kcov line coverage (threshold 100 percent):
-     100.00  41/41  postgresql.sh
-     100.00  15/15  36pgsqlverify
-     100.00  173/173  boot-test-lib.sh
      100.00  32/32  keel-project-packages
+     100.00  45/45  postgresql.sh
+     100.00  25/25  36pgsqlverify
+     100.00  173/173  boot-test-lib.sh
 
 ## What the hook tests cover
 
 The hook is executed for real against scratch directories, with PATH stubs
-for `systemctl`, `pg_isready` and `psql` under a scratch `INITHOOKS_PATH`
-whose `lib` is a symlink to the real library, so kcov measures the file the
+for `systemctl`, `pg_isready`, `psql` and `runuser` under a scratch
+`INITHOOKS_PATH` whose `lib` holds a symlink to the real library and a
+stand-in for inithooks' `lib/console.sh`, so kcov measures the file the
 layer ships. The `psql` stub answers the probe only for the password the
 description declared, the way a server does. No test needs root, a
 database or a network.
@@ -40,7 +42,9 @@ database or a network.
 What they are about is the half of the password defect that is this
 layer's: the declared password is proved against the database, a password
 the database refuses fails the hook, an answer that is not the probe's
-fails it, nothing declared fails naming the field and never prompts, a
+fails it; with nothing declared, a headless boot leaves the question to
+keel-init and fails nothing, a console that set the password passes on the
+catalogue, and a role with no password there fails naming the field; a
 `PGSQL_PASS` in the conf is not a password and is ignored, `APP_DB_USER`
 renames the role and a name that would need quoting is refused before
 anything runs, and the cluster is started and waited for on the address the

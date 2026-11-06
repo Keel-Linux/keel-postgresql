@@ -30,6 +30,16 @@ the machine matches the description.
   directories with every system command stubbed. The hook that sets the
   password, `35pgsqlpass`, belongs to the `common` fork and is tested
   there; this layer uses it rather than rewriting it.
+- `manifest.bats`: the appliance manifest, and the specs of this
+  repository against it. With `KEEL_SRC` (a checkout of keel) and
+  `KEEL_MANIFEST_SOURCES` (a directory with checkouts of keel-core and
+  common), keel's own validator holds the example and the boot test's
+  spec against the manifest along core, in a scratch root that
+  `lib/manifest-root.sh` makes; keel runs in a user namespace when the
+  test is not root.
+- `services.bats`: the services screen names only what the image has.
+- `commission.yaml`: the commissioning contract (handbook decision 0075),
+  which `bin/keel-commission` of `Keel-Linux/.github` reads.
 - `coverage.sh`: runs the bats suite under kcov and fails when any measured
   file is below `COVERAGE_THRESHOLD` (default 100).
 - `instance.yaml`: the description the test container boots from. It
