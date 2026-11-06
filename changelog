@@ -11,9 +11,9 @@ turnkey-postgresql-19.0 (9) turnkey; urgency=medium
     postgres by peer and requires a password there.
   * keel/instance.example.yaml named app.options.db_user, which no manifest
     of the chain declares: a first boot whose description named the
-    appliance refused it, and 31fqdn failed with it. The example and the
-    boot test's spec now name the appliance, installation.mode simple and
-    the five overlays of Core, and no option. 35pgsqlpass always sets the
+    appliance refused it, and 31fqdn failed with it. The example now names
+    the appliance, installation.mode simple and the five overlays of Core,
+    and no option; neither it nor the boot test's spec names the option. 35pgsqlpass always sets the
     postgres role.
   * The services screen named a web shell on port 12320. The image has
     none (Keel Core has no shellinabox): the line is gone.

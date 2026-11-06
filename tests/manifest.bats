@@ -54,7 +54,7 @@ keel_as_root() {
     [ "$status" -eq 0 ]
 }
 
-@test "manifest: the example spec and the boot test's spec hold against it, with no warning" {
+@test "manifest: the example specs hold against it, with no warning" {
     # keel 0.23.83 takes a spec that names no appliance with no check of
     # the manifests, and the example then named an option no manifest
     # declares: a first boot that named postgresql refused it (BR1 and
@@ -62,7 +62,7 @@ keel_as_root() {
     [ -n "${KEEL_SRC:-}" ] || skip "KEEL_SRC is not set"
     run tests/lib/manifest-root.sh "$BATS_TEST_TMPDIR/root" "$MANIFEST"
     [ "$status" -eq 0 ]
-    for spec in keel/instance.example.yaml tests/instance.yaml; do
+    for spec in keel/instance.example.yaml; do
         run keel_as_root spec validate --spec "$spec" --no-secret-files --root "$BATS_TEST_TMPDIR/root"
         echo "$spec: $output"
         [ "$status" -eq 0 ]
@@ -70,8 +70,8 @@ keel_as_root() {
     done
 }
 
-@test "manifest: every spec names the postgresql appliance, its mode and the five overlays of Core" {
-    for spec in keel/instance.example.yaml tests/instance.yaml; do
+@test "manifest: every example names the postgresql appliance, its mode and the five overlays of Core" {
+    for spec in keel/instance.example.yaml; do
         python3 - "$spec" <<'PY'
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1]))
@@ -94,4 +94,11 @@ for key in ("version", "network", "tls", "appliance", "installation", "overlays"
 assert sorted(instance["secrets"]) == sorted(example["secrets"]), "secrets"
 assert "instance" not in instance, "the machine keeps the name pct create gave it"
 PY
+}
+
+@test "manifest: the spec of the boot test names no appliance: the host of the test validates it, and has no manifest of postgresql" {
+    # the boot test refused it: "appliance.name: postgresql is not an installed
+    # appliance under /usr/share/keel" (CI of this repository, 2026-11-06)
+    run ! grep -qE '^(appliance|installation|overlays):' tests/instance.yaml
+    run ! grep -q 'db_user' tests/instance.yaml
 }
