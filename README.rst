@@ -102,8 +102,29 @@ setting it, not on whether the database will accept it, and ``keel diff``
 never compares secrets, on either side. On an appliance whose whole purpose
 is the database that is the one failure that must not be silent. So this
 layer adds ``firstboot.d/36pgsqlverify``, which runs after it, connects as
-a client over TCP on ``::1`` with the declared password and says so. With
-nothing declared it fails naming the field to declare.
+a client over TCP on ``::1`` with the declared password and says so.
+
+With nothing declared there is no password to log in with. When nobody can
+answer the console (the tty1 of an LXC with nobody attached),
+``35pgsqlpass`` asked nothing, and ``36pgsqlverify`` leaves the question to
+keel-init (``console_deferred``): the first login starts keel-init. At a
+console (keel-init, or a VM's first boot) ``35pgsqlpass`` asked the
+password and set it, and ``36pgsqlverify`` reads the catalogue as
+``postgres`` by peer: the role must have a password there, or the hook
+fails naming the field to declare. Before 2026-11-06 the hook failed in
+both cases, and the commissioning test (handbook decision 0075) found it
+on BR1 and BR2.
+
+The commissioning contract
+--------------------------
+
+``tests/commission.yaml`` says what the first boot asks, which login
+proves each password, which services and URLs answer, and what the image
+must not hold (decision 0075). ``bin/keel-commission`` of
+``Keel-Linux/.github`` reads it to commission the template on BR1 and BR2,
+and the job ``commission / contract`` checks that it is there and valid.
+Its ``instance`` is ``keel/instance.example.yaml`` with the secrets of the
+run, and a test holds the two to the same shape.
 
 ``PGSQL_PASS``, which ``mk/turnkey/pgsql.mk`` adds to ``CONF_VARS``, is a
 build time variable fab passes to ``conf/pgsql`` inside the chroot. It never
