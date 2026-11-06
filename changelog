@@ -19,6 +19,12 @@ turnkey-postgresql-19.0 (9) turnkey; urgency=medium
     none (Keel Core has no shellinabox): the line is gone.
   * tests/commission.yaml, the commissioning contract, and the CI job
     "commission / contract" that checks it.
+  * The cloud part of tests/commission.yaml takes the shape of the
+    reference contract of .github: hotkeys in the menus, the wait screen,
+    the VIP holder by "carried here: yes", a row written on the primary,
+    read on the standby, the server on the VIP seen from the standby,
+    and a writable server
+    after a promote.
 
  -- KeelLinux maintainers <admin@keellinux.org>  Fri, 06 Nov 2026 06:00:00 +0000
 
