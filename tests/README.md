@@ -40,6 +40,9 @@ the machine matches the description.
 - `services.bats`: the services screen names only what the image has.
 - `commission.yaml`: the commissioning contract (handbook decision 0075),
   which `bin/keel-commission` of `Keel-Linux/.github` reads.
+- `commission-core.yaml`: a copy of `tests/commission.yaml` of keel-core,
+  the contract of the Keel Core witness of the cloud advanced pass. Copy it
+  again when keel-core changes its contract.
 - `coverage.sh`: runs the bats suite under kcov and fails when any measured
   file is below `COVERAGE_THRESHOLD` (default 100).
 - `instance.yaml`: the description the test container boots from. It
