@@ -1,4 +1,4 @@
-turnkey-postgresql-19.0 (9) turnkey; urgency=medium
+keel-postgresql-19.0 (9) keel; urgency=medium
 
   * The commissioning test of handbook decision 0075 (a container made from
     the template on BR1 and BR2, as an operator makes it) found these
