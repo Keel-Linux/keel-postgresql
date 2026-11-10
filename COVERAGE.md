@@ -14,6 +14,7 @@ LXC as the acceptance test of a recipe, docs/org-plan.md section 1).
 | bin/keel-project-packages | tests/project-packages.bats (6 tests) | 100 percent (32/32) under kcov | inithooks, confconsole and keel are installed at apt's candidate, and the candidate is the Keel archive's in the suite of the track (KEEL_APT_TRACK); a version below the candidate, another source or an unknown track fails |
 | keel/instance.example.yaml, tests/instance.yaml, tests/commission.yaml | tests/manifest.bats | keel's own validator | with KEEL_SRC and KEEL_MANIFEST_SOURCES: the specs hold against the manifest along core, with no warning |
 | overlay/etc/confconsole/services.txt | tests/services.bats | every line | no web shell, which the image does not have |
+| Makefile | tests/firewall.bats (3 tests) | static | the uplink list of the Webmin firewall is 22 and 12321; no mesh port 5432 and no 12320 |
 | conf.d/main | the build | integration only | build time script, 0004 pragmatic limits |
 | tests/boot-test.sh | itself | integration only | the thin main of the acceptance test: keel and LXC as root |
 | overlay ... firstboot.d/35pgsqlpass | common | not this repository | the hook that sets the password belongs to the `common` fork and is used, not rewritten |
