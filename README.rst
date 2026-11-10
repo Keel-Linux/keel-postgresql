@@ -63,7 +63,11 @@ Debian's ``/etc/hosts`` maps ``::1`` to ``ip6-localhost`` and never to
 ``localhost``, which is a defect this layer shipped once and its own boot
 test caught. An appliance that really has remote clients opens the port, says
 who may connect and terminates TLS. That is a decision an appliance makes,
-not one a database layer makes for everything built on it.
+not one a database layer makes for everything built on it. The Webmin
+firewall of the recipe (``WEBMIN_FW_TCP_INCOMING`` of the Makefile) opens
+only 22 and 12321. On a pair, ``database.server.listen`` adds the node's
+overlay address and the VIP, and keel opens 5432, a mesh port of the
+manifest, only on the WireGuard interface.
 
 If the maintainer later wants literal parity with the upstream
 ``postgresql`` appliance, that is a different artefact: the appliance,

@@ -37,6 +37,9 @@ the machine matches the description.
   spec against the manifest along core, in a scratch root that
   `lib/manifest-root.sh` makes; keel runs in a user namespace when the
   test is not root.
+- `firewall.bats`: the ports that the Makefile gives the Webmin firewall
+  (22 and 12321 only; not 5432, a mesh port, and not 12320, where no web
+  shell is).
 - `services.bats`: the services screen names only what the image has.
 - `commission.yaml`: the commissioning contract (handbook decision 0075),
   which `bin/keel-commission` of `Keel-Linux/.github` reads.
