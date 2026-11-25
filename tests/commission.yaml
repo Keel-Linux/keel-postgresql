@@ -69,18 +69,11 @@ forbidden:
   # a database layer serves no web page of its own
   - {kind: path, name: /etc/nginx}
   - {kind: hook, name: 40lnpp-check}
-# The web pages of the gallery (decision 0077): Webmin before and after the
-# login with the root secret, and its PostgreSQL module after it.
-screenshots:
-  - name: webmin
-    port: 12321
-    url: /
-    login: {user_field: 'input[name=user]', user: root, password_field: 'input[name=pass]', secret: root, submit: 'button[type=submit]'}
-    # the dashboard of Webmin draws after the login; 8 s took a half
-    # drawn page on a busy VM of BR2 (vm-iso, 2026-11-06)
-    wait: 20
-  # the browser keeps the Webmin session of the shot before
-  - {name: webmin-postgresql, port: 12321, url: /postgresql/, wait: 8}
+# No web screenshot: the one web interface of this image is Webmin, and
+# it answers only on the access network of the administrators (decision
+# 0098, keel-core 0.1.5). The runner reaches the machine from outside,
+# through the PVE host, where 12321 is closed. The url above proves that
+# Webmin answers on the machine.
 # The cloud modes (decision 0076): PostgreSQL is a replicating engine, the
 # pair of decisions 0054 and 0057. The prompts are the titles of the
 # confconsole screens, the shape of the reference contract of .github
